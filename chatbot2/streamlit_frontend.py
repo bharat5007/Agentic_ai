@@ -1,12 +1,68 @@
 import streamlit as st
-from langgraph_backend import chatbot
+from langgraph_backend import chatbot, fetch_thread_ids
 from langchain_core.messages import HumanMessage
+import uuid
 
-CONFIG = {'configurable': {'thread_id': 'thread-1'}}
+
+#################################### Utility Functions #############################
+
+def generate_thread_id():
+    thread_id = uuid.uuid4()
+    return thread_id
+
+def reset_chat():
+    thread_id = generate_thread_id()
+    st.session_state['thread_id'] = thread_id
+    add_thread(st.session_state['thread_id'])
+    st.session_state['message_history'] = []
+
+def add_thread(thread_id):
+    if thread_id not in st.session_state['chat_threads']:
+        st.session_state['chat_threads'].append(thread_id)
+
+def load_conversation(thread_id):
+    x=chatbot.get_state(config={'configurable': {'thread_id': thread_id}}).values.get('messages')
+    return chatbot.get_state(config={'configurable': {'thread_id': thread_id}}).values.get('messages',[])
+
+
+############################## SESSION SETUP ##############################
 message_history = []
 
 if 'message_history' not in st.session_state:
     st.session_state['message_history'] = message_history
+
+if 'thread_id' not in st.session_state:
+    st.session_state['thread_id'] = generate_thread_id()
+
+if 'chat_threads' not in st.session_state:
+    st.session_state['chat_threads'] = fetch_thread_ids()
+
+add_thread(st.session_state['thread_id'])
+
+CONFIG = {'configurable': {'thread_id': st.session_state['thread_id']}}
+############################# SIDEBAR UI #############################
+
+st.sidebar.title("Langgraph Chatbot")
+
+if st.sidebar.button("New Chat"):
+    reset_chat()
+
+st.sidebar.header('Chat History')
+
+for thread_id in st.session_state['chat_threads']:
+    if st.sidebar.button(str(thread_id)):
+        st.session_state['thread_id'] = thread_id
+        messages = load_conversation(thread_id)
+
+        temp_messages = []
+        for msg in messages:
+            if isinstance(msg, HumanMessage):
+                temp_messages.append({'role': 'user', 'content': msg.content})
+            else:
+                temp_messages.append({'role': 'AI', 'content': msg.content})
+        st.session_state['message_history'] = temp_messages
+
+####################################### MAIN UI #############################
 
 for message in st.session_state['message_history']:
     with st.chat_message(message['role']):
