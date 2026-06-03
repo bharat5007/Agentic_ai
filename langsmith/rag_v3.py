@@ -1,4 +1,5 @@
 import truststore
+
 truststore.inject_into_ssl()
 
 import os
@@ -11,7 +12,11 @@ from langchain_groq import ChatGroq
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough, RunnableLambda
+from langchain_core.runnables import (
+    RunnableParallel,
+    RunnablePassthrough,
+    RunnableLambda,
+)
 from langchain_core.output_parsers import StrOutputParser
 
 load_dotenv()
@@ -19,11 +24,13 @@ os.environ["LANGCHAIN_PROJECT"] = "RAG 2"
 
 PDF_PATH = "langsmith/islr.pdf"
 
+
 # ----------------- helpers (not traced individually) -----------------
 @traceable(name="load_pdf")
 def load_pdf(path: str):
     loader = PyPDFLoader(path)
     return loader.load()  # list[Document]
+
 
 @traceable(name="split_documents")
 def split_documents(docs, chunk_size=1000, chunk_overlap=150):
@@ -32,10 +39,12 @@ def split_documents(docs, chunk_size=1000, chunk_overlap=150):
     )
     return splitter.split_documents(docs)
 
+
 @traceable(name="build_vectorstore")
 def build_vectorstore(splits):
     emb = HuggingFaceEmbeddings()
     return FAISS.from_documents(splits, emb)
+
 
 # ----------------- parent setup function (traced) -----------------
 @traceable(name="setup_pipeline", tags=["setup"])
@@ -45,16 +54,24 @@ def setup_pipeline(pdf_path: str, chunk_size=1000, chunk_overlap=150):
     vs = build_vectorstore(splits)
     return vs
 
+
 # ----------------- model, prompt, and run -----------------
 llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
 
-prompt = ChatPromptTemplate.from_messages([
-    ("system", "Answer ONLY from the provided context. If not found, say you don't know."),
-    ("human", "Question: {question}\n\nContext:\n{context}")
-])
+prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "Answer ONLY from the provided context. If not found, say you don't know.",
+        ),
+        ("human", "Question: {question}\n\nContext:\n{context}"),
+    ]
+)
+
 
 def format_docs(docs):
     return "\n\n".join(d.page_content for d in docs)
+
 
 # ----------------- one top-level (root) run -----------------
 @traceable(name="pdf_rag_full_run")
@@ -62,18 +79,23 @@ def setup_pipeline_and_query(pdf_path: str, question: str):
     # Parent setup run (child of root)
     vectorstore = setup_pipeline(pdf_path, chunk_size=1000, chunk_overlap=150)
 
-    retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 4})
+    retriever = vectorstore.as_retriever(
+        search_type="similarity", search_kwargs={"k": 4}
+    )
 
-    parallel = RunnableParallel({
-        "context": retriever | RunnableLambda(format_docs),
-        "question": RunnablePassthrough(),
-    })
+    parallel = RunnableParallel(
+        {
+            "context": retriever | RunnableLambda(format_docs),
+            "question": RunnablePassthrough(),
+        }
+    )
 
     chain = parallel | prompt | llm | StrOutputParser()
 
     # This LangChain run stays under the same root (since we're inside this traced function)
     lc_config = {"run_name": "pdf_rag_query"}
     return chain.invoke(question, config=lc_config)
+
 
 # ----------------- CLI -----------------
 if __name__ == "__main__":
