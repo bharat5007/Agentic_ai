@@ -4,6 +4,9 @@ truststore.inject_into_ssl()
 from dotenv import load_dotenv
 load_dotenv()
 
+import os
+os.environ["LANGCHAIN_PROJECT"] = "Agentic AI Chatbot"
+
 from langgraph.graph import StateGraph, START, END
 from typing import TypedDict, Annotated
 from langchain_core.messages import BaseMessage
