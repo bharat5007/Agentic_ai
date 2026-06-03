@@ -150,4 +150,4 @@ if __name__ == "__main__":
     print("PDF RAG ready. Ask a question (or Ctrl+C to exit).")
     q = input("\nQ: ").strip()
     ans = setup_pipeline_and_query(PDF_PATH, q)
-    print("\nA:", ans)
+    print("\nA:", ans) 
