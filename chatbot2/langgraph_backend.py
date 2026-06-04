@@ -18,7 +18,7 @@ from langgraph.graph.message import add_messages
 from langgraph.checkpoint.sqlite import SqliteSaver
 import sqlite3
 
-from langgraph.prebuilt import ToolNode
+from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_core.tools import tool
 
@@ -26,7 +26,6 @@ llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
 
 ############################# TOOLS #############################
 search_tool = DuckDuckGoSearchRun(regin="us-en")
-
 
 @tool
 def calculator(first_num: float, second_num: float, operation: str) -> dict:
@@ -64,7 +63,7 @@ class ChatState(TypedDict):
 ############################## Graph Nodes ###############################
 def chat_node(state: ChatState):
     messages = state["messages"]
-    response = llm.invoke(messages)
+    response = llm_with_tools.invoke(messages)
     return {"messages": [response]}
 
 
@@ -82,8 +81,8 @@ graph.add_node("chat_node", chat_node)
 graph.add_node("tools", tool_node)
 
 graph.add_edge(START, "chat_node")
-graph.add_edge("chat_node", "tools")
-graph.add_edge("tools", END)
+graph.add_conditional_edges("chat_node", tools_condition)
+graph.add_edge("tools", "chat_node")
 
 chatbot = graph.compile(checkpointer=checkpointer)
 

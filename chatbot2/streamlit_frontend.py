@@ -1,6 +1,6 @@
 import streamlit as st
 from langgraph_backend import chatbot, fetch_thread_ids
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 import uuid
 
 
@@ -88,12 +88,15 @@ if user_input:
         st.text(user_input)
 
     with st.chat_message("AI"):
-        ai_message = st.write_stream(
-            message_chunk.content
+
+        def ai_only_stream():
             for message_chunk, metadata in chatbot.stream(
                 {"messages": [HumanMessage(content=user_input)]},
                 config=CONFIG,
                 stream_mode="messages",
-            )
-        )
+            ):
+                if isinstance(message_chunk, AIMessage):
+                    yield message_chunk.content
+
+        ai_message = st.write_stream(ai_only_stream())
     st.session_state["message_history"].append({"role": "AI", "content": ai_message})
