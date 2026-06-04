@@ -27,6 +27,7 @@ llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
 ############################# TOOLS #############################
 search_tool = DuckDuckGoSearchRun(regin="us-en")
 
+
 @tool
 def calculator(first_num: float, second_num: float, operation: str) -> dict:
     """Performs basic arithmetic operations on two numbers. Supported operations are: add, subtract, multiply, divide."""
