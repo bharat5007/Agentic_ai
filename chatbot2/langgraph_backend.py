@@ -10,7 +10,7 @@ import os
 
 os.environ["LANGCHAIN_PROJECT"] = "Agentic AI Chatbot"
 
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import StateGraph, START
 from typing import TypedDict, Annotated
 from langchain_core.messages import BaseMessage
 from langchain_groq import ChatGroq
