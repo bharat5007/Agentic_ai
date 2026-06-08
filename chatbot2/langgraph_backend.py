@@ -1,14 +1,11 @@
 import truststore
 
-truststore.inject_into_ssl()
 
 from dotenv import load_dotenv
 
-load_dotenv()
 
 import os
 
-os.environ["LANGCHAIN_PROJECT"] = "Agentic AI Chatbot"
 
 from langgraph.graph import StateGraph, START
 from typing import TypedDict, Annotated
@@ -22,6 +19,9 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_core.tools import tool
 
+truststore.inject_into_ssl()
+load_dotenv()
+os.environ["LANGCHAIN_PROJECT"] = "Agentic AI Chatbot"
 llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
 
 ############################# TOOLS #############################

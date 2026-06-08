@@ -1,6 +1,5 @@
 import truststore
 
-truststore.inject_into_ssl()
 
 from langchain_groq import ChatGroq
 from dotenv import load_dotenv
@@ -9,6 +8,7 @@ from langchain_core.output_parsers import StrOutputParser
 import os
 
 
+truststore.inject_into_ssl()
 load_dotenv()
 os.environ["LANGCHAIN_PROJECT"] = "Sequential LLM APP"
 

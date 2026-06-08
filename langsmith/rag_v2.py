@@ -1,6 +1,5 @@
 import truststore
 
-truststore.inject_into_ssl()
 
 import os
 from dotenv import load_dotenv
@@ -20,6 +19,7 @@ from langchain_core.runnables import (
 )
 from langchain_core.output_parsers import StrOutputParser
 
+truststore.inject_into_ssl()
 load_dotenv()
 os.environ["LANGCHAIN_PROJECT"] = "RAG 2"
 
